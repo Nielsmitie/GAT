@@ -18,3 +18,8 @@ pipenv install
 # run the provided example
 pipenv run python -m execute_cora
 ```
+
+# Data
+
+Data downloaded from this repo:
+https://github.com/danielegrattarola/keras-gats
