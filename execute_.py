@@ -1,11 +1,33 @@
 import numpy as np
 import tensorflow as tf
 from utils import process
+from utils import process_ppi
+import os
+import time
+
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
 
 
 def run_gat(dataset, batch_size, nb_epochs,
-            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file):
+            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file, nhood):
+    # redirect output to file
+    import sys
+
+    orig_stdout = sys.stdout
+    if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
+        f = open(os.path.dirname(checkpt_file) + 'out.txt', 'a')
+        print('\n\n\n\n')
+    else:
+        f = open(os.path.dirname(checkpt_file) + 'out.txt', 'w')
+    sys.stdout = f
+
     print('Dataset: ' + dataset)
+    print('batch_size: ' + str(batch_size))
     print('----- Opt. hyperparams -----')
     print('lr: ' + str(lr))
     print('l2_coef: ' + str(l2_coef))
@@ -16,6 +38,7 @@ def run_gat(dataset, batch_size, nb_epochs,
     print('residual: ' + str(residual))
     print('nonlinearity: ' + str(nonlinearity))
     print('model: ' + str(model))
+    print('nhood: ' + str(nhood))
 
     adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = process.load_data(dataset)
     features, spars = process.preprocess_features(features)
@@ -35,7 +58,7 @@ def run_gat(dataset, batch_size, nb_epochs,
     val_mask = val_mask[np.newaxis]
     test_mask = test_mask[np.newaxis]
 
-    biases = process.adj_to_bias(adj, [nb_nodes], nhood=1)
+    biases = process.adj_to_bias(adj, [nb_nodes], nhood=nhood)
 
     with tf.Graph().as_default():
         with tf.name_scope('input'):
@@ -67,6 +90,8 @@ def run_gat(dataset, batch_size, nb_epochs,
         vlss_mn = np.inf
         vacc_mx = 0.0
         curr_step = 0
+
+        start = time.time()
 
         with tf.Session() as sess:
             sess.run(init_op)
@@ -153,6 +178,8 @@ def run_gat(dataset, batch_size, nb_epochs,
                 ts_acc += acc_ts
                 ts_step += 1
 
-            print('Test loss:', ts_loss/ts_step, '; Test accuracy:', ts_acc/ts_step)
+            print('Test loss:', ts_loss/ts_step, '; Test accuracy:', ts_acc/ts_step, ' at epoch: ', epoch, ' elapsed time', time.time() - start)
 
             sess.close()
+    sys.stdout = orig_stdout
+    f.close()

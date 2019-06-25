@@ -7,7 +7,7 @@ from utils import process
 import execute_
 
 
-dataset = 'pubmed'
+dataset = 'cora'
 
 checkpt_file = 'pre_trained/{}/mod_{}.ckpt'.format(dataset, dataset)
 
@@ -23,8 +23,9 @@ n_heads = [8, 1] # additional entry for the output layer
 residual = False
 nonlinearity = tf.nn.elu
 model = GAT
+nhood = 1
 
 execute_.run_gat(dataset=dataset, batch_size=batch_size, nb_epochs=nb_epochs, patience=patience, lr=lr, l2_coef=l2_coef,
                  hid_units=hid_units, n_heads=n_heads, residual=residual, nonlinearity=nonlinearity, model=model,
-                 checkpt_file=checkpt_file)
+                 checkpt_file=checkpt_file, nhood=nhood)
 
