@@ -81,7 +81,7 @@ def find_split(adj, mapping, ds_label):
                     return None
     return dict_splits
 
-
+# all the above methods are used here to create the dataset
 def process_p2p():
     print('Loading G...')
     with open('p2p_dataset/ppi-G.json') as jsonfile:
