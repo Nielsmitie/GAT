@@ -4,7 +4,7 @@ import tensorflow as tf
 
 import execute_
 
-dataset = 'pubmed'
+dataset = 'citeseer'
 
 checkpt_file = 'pre_trained/{}/mod_{}.ckpt'.format(dataset, dataset)
 
