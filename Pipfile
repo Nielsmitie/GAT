@@ -12,6 +12,7 @@ tensorflow-gpu = "*"
 keras = "*"
 networkx = "*"
 scikit-learn = "*"
+tensorflow = "*"
 
 [requires]
 python_version = "3.6"

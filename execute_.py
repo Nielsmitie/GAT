@@ -5,26 +5,30 @@ from utils import process_ppi
 import os
 import time
 
+'''
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
+'''
 
 
 def run_gat(dataset, batch_size, nb_epochs,
-            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file, nhood):
+            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file, nhood, param_attn_drop=0.6,
+            param_ffd_drop=0.6):
     # redirect output to file
     import sys
 
     orig_stdout = sys.stdout
     if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
         f = open(os.path.dirname(checkpt_file) + 'out.txt', 'a')
+        sys.stdout = f
         print('\n\n\n\n')
     else:
         f = open(os.path.dirname(checkpt_file) + 'out.txt', 'w')
-    sys.stdout = f
+        sys.stdout = f
 
     print('Dataset: ' + dataset)
     print('batch_size: ' + str(batch_size))
@@ -39,6 +43,8 @@ def run_gat(dataset, batch_size, nb_epochs,
     print('nonlinearity: ' + str(nonlinearity))
     print('model: ' + str(model))
     print('nhood: ' + str(nhood))
+    print('attn_drop: ' + str(param_attn_drop))
+    print('ffd_drop: ' + str(param_ffd_drop))
 
     adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = process.load_data(dataset)
     features, spars = process.preprocess_features(features)
@@ -104,7 +110,7 @@ def run_gat(dataset, batch_size, nb_epochs,
             for epoch in range(nb_epochs):
                 tr_step = 0
                 tr_size = features.shape[0]
-
+                # todo paper says only 20 nodes per class are used for training, but all steps use the same data?!
                 while tr_step * batch_size < tr_size:
                     _, loss_value_tr, acc_tr = sess.run([train_op, loss, accuracy],
                         feed_dict={
@@ -113,7 +119,7 @@ def run_gat(dataset, batch_size, nb_epochs,
                             lbl_in: y_train[tr_step*batch_size:(tr_step+1)*batch_size],
                             msk_in: train_mask[tr_step*batch_size:(tr_step+1)*batch_size],
                             is_train: True,
-                            attn_drop: 0.6, ffd_drop: 0.6})
+                            attn_drop: param_attn_drop, ffd_drop: param_ffd_drop})
                     train_loss_avg += loss_value_tr
                     train_acc_avg += acc_tr
                     tr_step += 1
