@@ -13,6 +13,11 @@ keras = "*"
 networkx = "*"
 scikit-learn = "*"
 tensorflow = "*"
+dgl = "*"
+requests = "*"
+torch = {file = "https://download.pytorch.org/whl/cpu/torch-1.1.0-cp36-cp36m-linux_x86_64.whl"}
+install = "*"
+torchvision = {file = "https://download.pytorch.org/whl/cpu/torchvision-0.3.0-cp36-cp36m-linux_x86_64.whl"}
 
 [requires]
 python_version = "3.6"
