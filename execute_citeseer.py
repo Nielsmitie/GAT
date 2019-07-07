@@ -1,8 +1,7 @@
-import time
-from models import GAT
 import tensorflow as tf
 
 import execute_
+from models import GAT
 
 dataset = 'citeseer'
 

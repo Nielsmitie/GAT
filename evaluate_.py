@@ -9,6 +9,7 @@ def evaluate(dataset, to_latex_table=False, *args, **kwargs):
         print(df.groupby(tracking_params).count()['training_epochs'])
         print('\n\t\t\tWith average results\n')
         print(df.groupby(tracking_params).mean())
+        print('\n\t\t\tWith std results\n')
         print(df.groupby(tracking_params).std())
 
     if to_latex_table:
@@ -17,4 +18,4 @@ def evaluate(dataset, to_latex_table=False, *args, **kwargs):
 
 
 if __name__ == '__main__':
-    evaluate('pubmed')
+    evaluate('cora')

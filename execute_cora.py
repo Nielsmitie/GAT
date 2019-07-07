@@ -1,11 +1,7 @@
-import time
-import numpy as np
 import tensorflow as tf
 
-from models import GAT
-from utils import process
 import execute_
-
+from models import GAT
 
 dataset = 'cora'
 
