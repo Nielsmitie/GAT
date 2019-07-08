@@ -9,7 +9,7 @@ import pandas as pd
 
 
 tracking_params = ["dataset", "lr", "l2_coef", "hid_units", "n_heads", "residual", "nonlinearity", "param_attn_drop",
-                   "param_ffd_drop"]
+                   "param_ffd_drop", "nhood"]
 
 result_cols = ["training_epochs", "elapsed_time", "min_validation_loss", "max_val_accuracy",
                "test_loss", "test_accuracy"]
@@ -236,7 +236,7 @@ def run_gat(dataset, batch_size, nb_epochs,
             log = dict(zip(tracking_params + result_cols,
                            [dataset, lr, l2_coef, hid_units, n_heads, residual,
                             str(nonlinearity).split(' ')[1],
-                            param_attn_drop, param_ffd_drop] +
+                            param_attn_drop, param_ffd_drop, nhood] +
                            [epoch, time.time() - start, vlss_mn, vacc_mx, ts_loss/ts_step, ts_acc/ts_step]))
 
             print('Adding entry: ' + str(log))
