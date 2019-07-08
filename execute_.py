@@ -5,26 +5,40 @@ from utils import process_ppi
 import os
 import time
 
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
+import pandas as pd
 
-config = ConfigProto()
-config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
+
+tracking_params = ["dataset", "lr", "l2_coef", "hid_units", "n_heads", "residual", "nonlinearity", "param_attn_drop",
+                   "param_ffd_drop"]
+
+result_cols = ["training_epochs", "elapsed_time", "min_validation_loss", "max_val_accuracy",
+               "test_loss", "test_accuracy"]
 
 
 def run_gat(dataset, batch_size, nb_epochs,
-            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file, nhood):
+            patience, lr, l2_coef, hid_units, n_heads, residual, nonlinearity, model, checkpt_file, nhood, param_attn_drop=0.6,
+            param_ffd_drop=0.6, sparse=False):
+    # necessary work around to run on GPU
+    # '''
+    from tensorflow.compat.v1 import ConfigProto
+    from tensorflow.compat.v1 import InteractiveSession
+
+    config = ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = InteractiveSession(config=config)
+    # '''
+
     # redirect output to file
     import sys
 
     orig_stdout = sys.stdout
     if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
         f = open(os.path.dirname(checkpt_file) + 'out.txt', 'a')
+        sys.stdout = f
         print('\n\n\n\n')
     else:
         f = open(os.path.dirname(checkpt_file) + 'out.txt', 'w')
-    sys.stdout = f
+        sys.stdout = f
 
     print('Dataset: ' + dataset)
     print('batch_size: ' + str(batch_size))
@@ -39,6 +53,8 @@ def run_gat(dataset, batch_size, nb_epochs,
     print('nonlinearity: ' + str(nonlinearity))
     print('model: ' + str(model))
     print('nhood: ' + str(nhood))
+    print('attn_drop: ' + str(param_attn_drop))
+    print('ffd_drop: ' + str(param_ffd_drop))
 
     adj, features, y_train, y_val, y_test, train_mask, val_mask, test_mask = process.load_data(dataset)
     features, spars = process.preprocess_features(features)
@@ -47,10 +63,8 @@ def run_gat(dataset, batch_size, nb_epochs,
     ft_size = features.shape[1]
     nb_classes = y_train.shape[1]
 
-    adj = adj.todense()
-
     features = features[np.newaxis]
-    adj = adj[np.newaxis]
+    # adj = adj[np.newaxis]
     y_train = y_train[np.newaxis]
     y_val = y_val[np.newaxis]
     y_test = y_test[np.newaxis]
@@ -58,12 +72,28 @@ def run_gat(dataset, batch_size, nb_epochs,
     val_mask = val_mask[np.newaxis]
     test_mask = test_mask[np.newaxis]
 
-    biases = process.adj_to_bias(adj, [nb_nodes], nhood=nhood)
+    if sparse:
+        biases = process.preprocess_adj_bias(adj)
+    else:
+        adj = adj.todense()
+        adj = adj[np.newaxis]
+        biases = process.adj_to_bias(adj, [nb_nodes], nhood=1)
+
+    # adj = adj.todense()
+    # biases = process.adj_to_bias(adj, [nb_nodes], nhood=nhood)
 
     with tf.Graph().as_default():
         with tf.name_scope('input'):
             ftr_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, ft_size))
-            bias_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, nb_nodes))
+            if sparse:
+                # bias_idx = tf.placeholder(tf.int64)
+                # bias_val = tf.placeholder(tf.float32)
+                # bias_shape = tf.placeholder(tf.int64)
+                bias_in = tf.sparse_placeholder(dtype=tf.float32)
+            else:
+                bias_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, nb_nodes))
+
+            # bias_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, nb_nodes))
             lbl_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes, nb_classes))
             msk_in = tf.placeholder(dtype=tf.int32, shape=(batch_size, nb_nodes))
             attn_drop = tf.placeholder(dtype=tf.float32, shape=())
@@ -104,16 +134,21 @@ def run_gat(dataset, batch_size, nb_epochs,
             for epoch in range(nb_epochs):
                 tr_step = 0
                 tr_size = features.shape[0]
-
+                # todo paper says only 20 nodes per class are used for training, but all steps use the same data?!
                 while tr_step * batch_size < tr_size:
+                    if sparse:
+                        bbias = biases
+                    else:
+                        bbias = biases[tr_step * batch_size:(tr_step + 1) * batch_size]
+
                     _, loss_value_tr, acc_tr = sess.run([train_op, loss, accuracy],
                         feed_dict={
                             ftr_in: features[tr_step*batch_size:(tr_step+1)*batch_size],
-                            bias_in: biases[tr_step*batch_size:(tr_step+1)*batch_size],
+                            bias_in: bbias,
                             lbl_in: y_train[tr_step*batch_size:(tr_step+1)*batch_size],
                             msk_in: train_mask[tr_step*batch_size:(tr_step+1)*batch_size],
                             is_train: True,
-                            attn_drop: 0.6, ffd_drop: 0.6})
+                            attn_drop: param_attn_drop, ffd_drop: param_ffd_drop})
                     train_loss_avg += loss_value_tr
                     train_acc_avg += acc_tr
                     tr_step += 1
@@ -122,10 +157,15 @@ def run_gat(dataset, batch_size, nb_epochs,
                 vl_size = features.shape[0]
 
                 while vl_step * batch_size < vl_size:
+                    if sparse:
+                        bbias = biases
+                    else:
+                        bbias = biases[vl_step * batch_size:(vl_step + 1) * batch_size]
+
                     loss_value_vl, acc_vl = sess.run([loss, accuracy],
                         feed_dict={
                             ftr_in: features[vl_step*batch_size:(vl_step+1)*batch_size],
-                            bias_in: biases[vl_step*batch_size:(vl_step+1)*batch_size],
+                            bias_in: bbias,
                             lbl_in: y_val[vl_step*batch_size:(vl_step+1)*batch_size],
                             msk_in: val_mask[vl_step*batch_size:(vl_step+1)*batch_size],
                             is_train: False,
@@ -166,10 +206,14 @@ def run_gat(dataset, batch_size, nb_epochs,
             ts_acc = 0.0
 
             while ts_step * batch_size < ts_size:
+                if sparse:
+                    bbias = biases
+                else:
+                    bbias = biases[ts_step * batch_size:(ts_step + 1) * batch_size]
                 loss_value_ts, acc_ts = sess.run([loss, accuracy],
                     feed_dict={
                         ftr_in: features[ts_step*batch_size:(ts_step+1)*batch_size],
-                        bias_in: biases[ts_step*batch_size:(ts_step+1)*batch_size],
+                        bias_in: bbias,
                         lbl_in: y_test[ts_step*batch_size:(ts_step+1)*batch_size],
                         msk_in: test_mask[ts_step*batch_size:(ts_step+1)*batch_size],
                         is_train: False,
@@ -179,6 +223,28 @@ def run_gat(dataset, batch_size, nb_epochs,
                 ts_step += 1
 
             print('Test loss:', ts_loss/ts_step, '; Test accuracy:', ts_acc/ts_step, ' at epoch: ', epoch, ' elapsed time', time.time() - start)
+
+            # log information about the training
+            if os.path.isfile(os.path.dirname(checkpt_file) + 'log.csv'):
+                print('loading existing log')
+                df = pd.read_csv(os.path.dirname(checkpt_file) + 'log.csv', index_col=['run'])
+                print('log: ' + str(df))
+            else:
+                print('Creating new log')
+                df = pd.DataFrame(columns=tracking_params+result_cols)
+
+            log = dict(zip(tracking_params + result_cols,
+                           [dataset, lr, l2_coef, hid_units, n_heads, residual,
+                            str(nonlinearity).split(' ')[1],
+                            param_attn_drop, param_ffd_drop] +
+                           [epoch, time.time() - start, vlss_mn, vacc_mx, ts_loss/ts_step, ts_acc/ts_step]))
+
+            print('Adding entry: ' + str(log))
+
+            df = df.append(log, ignore_index=True)
+            print('saving logs')
+            df.to_csv(os.path.dirname(checkpt_file) + 'log.csv', index_label='run')
+            print('log save succesfull')
 
             sess.close()
     sys.stdout = orig_stdout

@@ -103,10 +103,13 @@ def process_p2p():
         id_map = json.load(jsonfile)
     print(len(id_map))
 
+    # todo what representation is expected here?
     id_map = {int(k): int(v) for k, v in id_map.items()}
+    ''' unneccessary duplicate from the code aboce?!
     for key, value in id_map.items():
         id_map[key] = [value]
     print(len(id_map))
+    '''
 
     print('Loading features...')
     features_ = np.load('p2p_dataset/ppi-feats.npy')
