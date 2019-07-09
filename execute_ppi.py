@@ -90,6 +90,10 @@ nb_nodes = train_feat.shape[1]
 ft_size = train_feat.shape[2]
 nb_classes = y_train.shape[2]
 
+train_adj = process.adj_to_bias(train_adj, [nb_nodes]*20, nhood=1)
+val_adj = process.adj_to_bias(val_adj, [nb_nodes]*2, nhood=1)
+test_adj = process.adj_to_bias(test_adj, [nb_nodes]*2, nhood=1)
+
 with tf.Graph().as_default():
     with tf.name_scope('input'):
         ftr_in = tf.placeholder(dtype=tf.float32, shape=(batch_size, nb_nodes, ft_size), name='features')

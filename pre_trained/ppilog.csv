@@ -1,0 +1,2 @@
+run,dataset,lr,l2_coef,hid_units,n_heads,residual,nonlinearity,param_attn_drop,param_ffd_drop,nhood,training_epochs,elapsed_time,min_validation_loss,max_val_accuracy,test_loss,test_accuracy
+0,ppi,0.005,0,"[256, 256, 121]","[4, 4, 6]",True,elu,0.0,0.0,1,251,1574.1964845657349,0.1291361227631569,0.960727334022522,0.06996030360460281,0.9712968468666077
