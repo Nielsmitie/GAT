@@ -8,8 +8,11 @@ from models import GAT, SpGAT
 
 import pandas as pd
 
-batch_size = 2
-nb_epochs = 10000000
+
+# todo model is still only as good as random
+
+batch_size = 1
+nb_epochs = 20000
 patience = 100
 lr = 0.005  # learning rate
 l2_coef = 0  # no l2 regularization
@@ -19,8 +22,8 @@ residual = True
 nonlinearity = tf.nn.elu
 model = GAT
 nhood = 1
-param_attn_drop = 0  # use no drop out
-param_ffd_drop = 0
+param_attn_drop = 0.0  # use no drop out
+param_ffd_drop = 0.0
 
 dataset = 'ppi'
 sparse = False
@@ -45,7 +48,7 @@ session = InteractiveSession(config=config)
 
 # redirect output to file
 import sys
-
+'''
 orig_stdout = sys.stdout
 if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
     f = open(os.path.dirname(checkpt_file) + 'out.txt', 'a')
@@ -54,7 +57,7 @@ if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
 else:
     f = open(os.path.dirname(checkpt_file) + 'out.txt', 'w')
     sys.stdout = f
-
+'''
 print('Dataset: ' + dataset)
 print('batch_size: ' + str(batch_size))
 print('----- Opt. hyperparams -----')
@@ -107,7 +110,8 @@ with tf.Graph().as_default():
     msk_resh = tf.reshape(msk_in, [-1], name='mask_resh')
     # important use sigmoid cross entropy here
     loss = model.masked_sigmoid_cross_entropy(log_resh, lab_resh, msk_resh)
-    accuracy = model.masked_accuracy(log_resh, lab_resh, msk_resh)
+    # use micro_f1 instead of accuracy
+    accuracy = model.micro_f1(log_resh, lab_resh, msk_resh)
 
     train_op = model.training(loss, lr, l2_coef)
 
@@ -122,6 +126,7 @@ with tf.Graph().as_default():
     start = time.time()
 
     with tf.Session() as sess:
+
         sess.run(init_op)
 
         train_loss_avg = 0
@@ -208,28 +213,30 @@ with tf.Graph().as_default():
             print('Test loss:', ts_loss / ts_step, '; Test accuracy:', ts_acc / ts_step, ' at epoch: ', epoch,
                   ' elapsed time', time.time() - start)
 
-            # log information about the training
-            if os.path.isfile(os.path.dirname(checkpt_file) + 'log.csv'):
-                print('loading existing log')
-                df = pd.read_csv(os.path.dirname(checkpt_file) + 'log.csv', index_col=['run'])
-                print('log: ' + str(df))
-            else:
-                print('Creating new log')
-                df = pd.DataFrame(columns=tracking_params + result_cols)
+        # log information about the training
+        if os.path.isfile(os.path.dirname(checkpt_file) + 'log.csv'):
+            print('loading existing log')
+            df = pd.read_csv(os.path.dirname(checkpt_file) + 'log.csv', index_col=['run'])
+            print('log: ' + str(df))
+        else:
+            print('Creating new log')
+            df = pd.DataFrame(columns=tracking_params + result_cols)
 
-            log = dict(zip(tracking_params + result_cols,
-                           [dataset, lr, l2_coef, hid_units, n_heads, residual,
-                            str(nonlinearity).split(' ')[1],
-                            param_attn_drop, param_ffd_drop, nhood] +
-                           [epoch, time.time() - start, vlss_mn, vacc_mx, ts_loss / ts_step, ts_acc / ts_step]))
+        log = dict(zip(tracking_params + result_cols,
+                       [dataset, lr, l2_coef, hid_units, n_heads, residual,
+                        str(nonlinearity).split(' ')[1],
+                        param_attn_drop, param_ffd_drop, nhood] +
+                       [epoch, time.time() - start, vlss_mn, vacc_mx, ts_loss / ts_step, ts_acc / ts_step]))
 
-            print('Adding entry: ' + str(log))
+        print('Adding entry: ' + str(log))
 
-            df = df.append(log, ignore_index=True)
-            print('saving logs')
-            df.to_csv(os.path.dirname(checkpt_file) + 'log.csv', index_label='run')
-            print('log save succesfull')
+        df = df.append(log, ignore_index=True)
+        print('saving logs')
+        df.to_csv(os.path.dirname(checkpt_file) + 'log.csv', index_label='run')
+        print('log save succesfull')
 
-            sess.close()
+        sess.close()
+        '''
         sys.stdout = orig_stdout
         f.close()
+        '''
