@@ -24,21 +24,10 @@ pipenv run python -m execute_cora
 Data downloaded from this repo:
 https://github.com/danielegrattarola/keras-gats
 
+The small datasets are already included in the repository.
+
 ## PPI dataset
-
-Couldn't find the right dataset.
-Install the dgl library and ran the commands:
-```python
-from dgl.data import ppi
-
-ppi.PPIDataset('train')
-
-```
-```shell
-Downloading /home/nuels/.dgl/ppi.zip from https://s3.us-east-2.amazonaws.com/dgl.ai/dataset/ppi.zip...
-Extracting file to /home/nuels/.dgl/ppi
-Loading G...
-<dgl.data.ppi.PPIDataset object at 0x7f3324112c88>
-```
-
-Get the data from the said directory.
+Go to
+http://snap.stanford.edu/graphsage/
+and select Protein-Protein Interactions -> preprocessed. Download and unpack it.
+Move it into the p2p_dataset directory.
