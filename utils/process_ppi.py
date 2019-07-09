@@ -119,7 +119,7 @@ def process_p2p():
     from sklearn.preprocessing import StandardScaler
 
     train_ids = np.array([id_map[n] for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']])
-    train_feats = features_[train_ids[:, 0]]
+    train_feats = features_[train_ids]
     scaler = StandardScaler()
     scaler.fit(train_feats)
     features_ = scaler.transform(features_)
