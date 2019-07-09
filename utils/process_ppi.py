@@ -105,11 +105,10 @@ def process_p2p():
 
     # todo what representation is expected here?
     id_map = {int(k): int(v) for k, v in id_map.items()}
-    ''' unneccessary duplicate from the code aboce?!
+
     for key, value in id_map.items():
         id_map[key] = [value]
     print(len(id_map))
-    '''
 
     print('Loading features...')
     features_ = np.load('p2p_dataset/ppi-feats.npy')
@@ -119,7 +118,7 @@ def process_p2p():
     from sklearn.preprocessing import StandardScaler
 
     train_ids = np.array([id_map[n] for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']])
-    train_feats = features_[train_ids]
+    train_feats = features_[train_ids[:, 0]]
     scaler = StandardScaler()
     scaler.fit(train_feats)
     features_ = scaler.transform(features_)
