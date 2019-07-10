@@ -13,9 +13,10 @@ def evaluate(dataset, to_latex_table=False, *args, **kwargs):
         print(df.groupby(tracking_params).std())
 
     if to_latex_table:
-        print(df.groupby(tracking_params).mean().to_latex(*args, **kwargs))
-        print(df.groupby(tracking_params).std().to_latex(*args, **kwargs))
+        print(df.groupby(tracking_params).mean().reset_index(['dataset', 'lr', 'l2_coef', 'nonlinearity', 'param_attn_drop', 'param_ffd_drop'], drop=True).to_latex(*args, **kwargs))
+
+        print(df.groupby(tracking_params).std().reset_index(['dataset', 'lr', 'l2_coef', 'nonlinearity', 'param_attn_drop', 'param_ffd_drop'], drop=True).to_latex(*args, **kwargs))
 
 
 if __name__ == '__main__':
-    evaluate('cora')
+    evaluate('pubmed', to_latex_table=True, multirow=False, longtable=False, columns=['test_accuracy'], float_format='%.3f%%')

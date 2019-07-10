@@ -48,7 +48,7 @@ session = InteractiveSession(config=config)
 
 # redirect output to file
 import sys
-'''
+
 orig_stdout = sys.stdout
 if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
     f = open(os.path.dirname(checkpt_file) + 'out.txt', 'a')
@@ -57,7 +57,7 @@ if os.path.isfile(os.path.dirname(checkpt_file) + 'out.txt'):
 else:
     f = open(os.path.dirname(checkpt_file) + 'out.txt', 'w')
     sys.stdout = f
-'''
+
 print('Dataset: ' + dataset)
 print('batch_size: ' + str(batch_size))
 print('----- Opt. hyperparams -----')
@@ -240,7 +240,7 @@ with tf.Graph().as_default():
         print('log save succesfull')
 
         sess.close()
-        '''
-        sys.stdout = orig_stdout
-        f.close()
-        '''
+
+sys.stdout = orig_stdout
+f.close()
+
