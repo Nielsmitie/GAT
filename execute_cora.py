@@ -7,7 +7,6 @@ dataset = 'cora'
 
 checkpt_file = 'pre_trained/{}/mod_{}.ckpt'.format(dataset, dataset)
 
-# todo change hyperparamters
 # training params
 batch_size = 1
 nb_epochs = 100000

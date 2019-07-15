@@ -9,9 +9,15 @@ from models import GAT, SpGAT
 import pandas as pd
 
 
-# todo model is still only as good as random
+'''
+Reimplimentation of execute_.py but with some changes that made it difficult to generalize between transductive and
+inductive training tasks.
 
-batch_size = 1
+This script doesn't support sparse execution
+'''
+
+# parameters set based on the original paper.
+batch_size = 1 # different that the original paper. Had to be set to one to prevent Out of memory error on GPU
 nb_epochs = 20000
 patience = 100
 lr = 0.005  # learning rate
@@ -36,15 +42,16 @@ tracking_params = ["dataset", "lr", "l2_coef", "hid_units", "n_heads", "residual
 result_cols = ["training_epochs", "elapsed_time", "min_validation_loss", "max_val_accuracy",
                "test_loss", "test_accuracy"]
 
+
 # necessary work around to run on GPU
-# '''
+'''
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
-# '''
+'''
 
 # redirect output to file
 import sys
@@ -79,6 +86,8 @@ train_adj, val_adj, test_adj, train_feat, \
     test_labels, train_nodes, val_nodes, test_nodes, \
     tr_msk, vl_msk, ts_msk = process_ppi.process_p2p()
 
+# only difference are the name and that there are variables fpr train, validation and training for feature, adjacent and
+# mask now
 y_train = train_labels
 y_val = val_labels
 y_test = test_labels

@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 import execute_
-from models import GAT
+from models import GAT, SpGAT
 
 dataset = 'citeseer'
 

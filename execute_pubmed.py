@@ -7,7 +7,6 @@ dataset = 'pubmed'
 
 checkpt_file = 'pre_trained/{}/mod_{}.ckpt'.format(dataset, dataset)
 
-# todo fit the right hyperparamters to the method
 # training params
 batch_size = 1
 nb_epochs = 100000
